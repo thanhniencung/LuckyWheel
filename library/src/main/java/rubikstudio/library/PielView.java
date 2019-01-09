@@ -117,7 +117,7 @@ public class PielView extends View {
         init();
 
         float tmpAngle = mStartAngle;
-        float sweepAngle = 360 / mLuckyItemList.size();
+        float sweepAngle = 360f / mLuckyItemList.size();
 
         for(int i = 0; i < mLuckyItemList.size(); i++) {
             mArcPaint.setColor(mLuckyItemList.get(i).color);
@@ -166,7 +166,7 @@ public class PielView extends View {
     private void drawImage(Canvas canvas, float tmpAngle, Bitmap bitmap) {
         int imgWidth = mRadius / mLuckyItemList.size();
 
-        float angle = (float) ((tmpAngle + 360 / mLuckyItemList.size() / 2) * Math.PI / 180);
+        float angle = (float) ((tmpAngle + 360f / mLuckyItemList.size() / 2) * Math.PI / 180);
 
         int x = (int) (mCenter + mRadius / 2 / 2 * Math.cos(angle));
         int y = (int) (mCenter + mRadius / 2 / 2 * Math.sin(angle));
@@ -205,7 +205,7 @@ public class PielView extends View {
      */
     private float getAngleOfIndexTarget() {
         int tempIndex = mTargetIndex == 0 ? 1 : mTargetIndex;
-        return (360 / mLuckyItemList.size()) * tempIndex;
+        return (360f / mLuckyItemList.size()) * tempIndex;
     }
 
     /**
@@ -224,7 +224,7 @@ public class PielView extends View {
         }
         mTargetIndex = index;
         setRotation(0);
-        float targetAngle = 360 * mRoundOfNumber + 270 - getAngleOfIndexTarget() + (360 / mLuckyItemList.size()) / 2;
+        float targetAngle = 360f * mRoundOfNumber + 270f - getAngleOfIndexTarget() + (360f / mLuckyItemList.size()) / 2;
         animate()
                 .setInterpolator(new DecelerateInterpolator())
                 .setDuration(mRoundOfNumber * 1000 + 900L)
