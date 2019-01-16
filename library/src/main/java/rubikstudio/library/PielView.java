@@ -226,12 +226,7 @@ public class PielView extends View {
         }
         setRotation(0);
 
-        float targetAngle;
-        if (index > 0) {
-            targetAngle = 360f * mRoundOfNumber + 270f - getAngleOfIndexTarget(index) - (360f / mLuckyItemList.size()) / 2;
-        } else {
-            targetAngle = 360f * mRoundOfNumber + 270f - (360f / mLuckyItemList.size()) / 2;
-        }
+        float targetAngle = 360f * mRoundOfNumber + 270f - getAngleOfIndexTarget(index) - (360f / mLuckyItemList.size()) / 2;
         animate()
                 .setInterpolator(new DecelerateInterpolator())
                 .setDuration(mRoundOfNumber * 1000 + 900L)
