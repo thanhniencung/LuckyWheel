@@ -35,7 +35,6 @@ public class PielView extends View {
     private float mStartAngle = 0;
     private int mCenter;
     private int mPadding;
-    private int mTargetIndex;
     private int mRoundOfNumber = 4;
     private boolean isRunning = false;
 
@@ -97,7 +96,8 @@ public class PielView extends View {
 
     private void drawPieBackgroundWithBitmap(Canvas canvas, Bitmap bitmap) {
         canvas.drawBitmap(bitmap, null, new Rect(mPadding/2,mPadding/2,
-                getMeasuredWidth() - mPadding/2, getMeasuredHeight()-mPadding/2), null);
+                getMeasuredWidth() - mPadding/2,
+                getMeasuredHeight()-mPadding/2), null);
     }
 
     /**
@@ -124,7 +124,8 @@ public class PielView extends View {
             canvas.drawArc(mRange, tmpAngle, sweepAngle, true, mArcPaint);
 
             drawText(canvas, tmpAngle, sweepAngle, mLuckyItemList.get(i).text);
-            drawImage(canvas, tmpAngle, BitmapFactory.decodeResource(getResources(), mLuckyItemList.get(i).icon));
+            drawImage(canvas, tmpAngle, BitmapFactory.decodeResource(getResources(),
+                    mLuckyItemList.get(i).icon));
 
             tmpAngle += sweepAngle;
         }
@@ -171,7 +172,8 @@ public class PielView extends View {
         int x = (int) (mCenter + mRadius / 2 / 2 * Math.cos(angle));
         int y = (int) (mCenter + mRadius / 2 / 2 * Math.sin(angle));
 
-        Rect rect = new Rect(x - imgWidth/2, y - imgWidth/2, x + imgWidth/2, y + imgWidth/2);
+        Rect rect = new Rect(x - imgWidth/2, y - imgWidth/2,
+                x + imgWidth/2, y + imgWidth/2);
         canvas.drawBitmap(bitmap, null, rect, null);
     }
 
@@ -179,7 +181,8 @@ public class PielView extends View {
         //Bitmap bitmap = BitmapFactory.decodeResource(getResources(), drawable);
         Bitmap bitmap = LuckyWheelUtils.drawableToBitmap(drawable);
         bitmap = Bitmap.createScaledBitmap(bitmap, 90, 90, false);
-        canvas.drawBitmap(bitmap, getMeasuredWidth() / 2 - bitmap.getWidth() / 2, getMeasuredHeight() / 2 - bitmap.getHeight() / 2, null);
+        canvas.drawBitmap(bitmap, getMeasuredWidth() / 2 - bitmap.getWidth() / 2,
+                getMeasuredHeight() / 2 - bitmap.getHeight() / 2, null);
     }
 
     /**
@@ -203,9 +206,8 @@ public class PielView extends View {
     /**
      * @return
      */
-    private float getAngleOfIndexTarget() {
-        int tempIndex = mTargetIndex == 0 ? 1 : mTargetIndex;
-        return (360f / mLuckyItemList.size()) * tempIndex;
+    private float getAngleOfIndexTarget(int index) {
+        return (360f / mLuckyItemList.size()) * index;
     }
 
     /**
@@ -218,13 +220,18 @@ public class PielView extends View {
     /**
      * @param index
      */
-    public void rotateTo(int index) {
+    public void rotateTo(final int index) {
         if (isRunning) {
             return;
         }
-        mTargetIndex = index;
         setRotation(0);
-        float targetAngle = 360f * mRoundOfNumber + 270f - getAngleOfIndexTarget() - (360f / mLuckyItemList.size()) / 2;
+
+        float targetAngle;
+        if (index > 0) {
+            targetAngle = 360f * mRoundOfNumber + 270f - getAngleOfIndexTarget(index) - (360f / mLuckyItemList.size()) / 2;
+        } else {
+            targetAngle = 360f * mRoundOfNumber + 270f - (360f / mLuckyItemList.size()) / 2;
+        }
         animate()
                 .setInterpolator(new DecelerateInterpolator())
                 .setDuration(mRoundOfNumber * 1000 + 900L)
@@ -238,7 +245,7 @@ public class PielView extends View {
                     public void onAnimationEnd(Animator animation) {
                         isRunning = false;
                         if (mPieRotateListener != null) {
-                            mPieRotateListener.rotateDone(mTargetIndex);
+                            mPieRotateListener.rotateDone(index);
                         }
                     }
 

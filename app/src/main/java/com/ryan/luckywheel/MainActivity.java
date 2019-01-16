@@ -1,6 +1,6 @@
 package com.ryan.luckywheel;
 
-import android.support.v7.app.AppCompatActivity;
+import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
@@ -13,7 +13,7 @@ import rubikstudio.library.LuckyWheelView;
 import rubikstudio.library.model.LuckyItem;
 import rubikstudio.library.PielView;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
     List<LuckyItem> data = new ArrayList<>();
 
     @Override
@@ -123,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
         luckyWheelView.setLuckyRoundItemSelectedListener(new LuckyWheelView.LuckyRoundItemSelectedListener() {
             @Override
             public void LuckyRoundItemSelected(int index) {
-                Toast.makeText(getApplicationContext(), String.valueOf(index), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), data.get(index).text, Toast.LENGTH_SHORT).show();
             }
         });
     }
