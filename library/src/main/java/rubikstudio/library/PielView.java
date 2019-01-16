@@ -70,6 +70,7 @@ public class PielView extends View {
         mTextPaint.setColor(textColor);
         mTextPaint.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,14,
                 getResources().getDisplayMetrics()));
+        mTextPaint.setTextAlign(Paint.Align.CENTER);
 
         mRange = new RectF(mPadding, mPadding, mPadding+mRadius, mPadding+mRadius);
     }
@@ -195,12 +196,9 @@ public class PielView extends View {
         Path path = new Path();
         path.addArc(mRange,tmpAngle,sweepAngle);
 
-        float textWidth = mTextPaint.measureText(mStr);
-        int hOffset = (int) (mRadius * Math.PI / mLuckyItemList.size()/2-textWidth/2);
-
         int vOffset = mRadius/2/4;
 
-        canvas.drawTextOnPath(mStr, path, hOffset, vOffset, mTextPaint);
+        canvas.drawTextOnPath(mStr, path, 0, vOffset, mTextPaint);
     }
 
     /**
