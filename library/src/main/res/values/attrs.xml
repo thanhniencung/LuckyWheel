@@ -8,7 +8,12 @@
         <attr name="lkwBackgroundColor" format="color" />
         <attr name="lkwCursor" format="reference" />
         <attr name="lkwCenterImage" format="reference" />
-        <attr name="lkwTextColor" format="color" />
+        <attr name="lkwEdgeColor" format="color" />
+        <attr name="lkwEdgeWidth" format="integer" />
+        <attr name="lkwTopTextColor" format="color" />
+        <attr name="lkwTopTextPadding" format="dimension" />
+        <attr name="lkwTopTextSize" format="dimension" />
+        <attr name="lkwSecondaryTextSize" format="dimension" />
     </declare-styleable>
 
 </resources>
