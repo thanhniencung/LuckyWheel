@@ -5,15 +5,20 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.text.TextPaint;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 
 import java.util.List;
@@ -31,7 +36,7 @@ public class PielView extends View {
 
     private Paint mArcPaint;
     private Paint mBackgroundPaint;
-    private Paint mTextPaint;
+    private TextPaint mTextPaint;
 
     private float mStartAngle = 0;
     private int mCenter;
@@ -45,6 +50,10 @@ public class PielView extends View {
     private int defaultBackgroundColor = 0;
     private Drawable drawableCenterImage;
     private int textColor = 0;
+
+    float viewRotation;
+    double fingerRotation;
+    double newFingerRotation;
 
     private List<LuckyItem> mLuckyItemList;
 
@@ -71,7 +80,10 @@ public class PielView extends View {
         mArcPaint.setAntiAlias(true);
         mArcPaint.setDither(true);
 
-        mTextPaint = new Paint();
+        mTextPaint = new TextPaint();
+        mTextPaint.setAntiAlias(true);
+
+
         if (textColor != 0) mTextPaint.setColor(textColor);
         mTextPaint.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14,
                 getResources().getDisplayMetrics()));
@@ -142,10 +154,11 @@ public class PielView extends View {
 
         for (int i = 0; i < mLuckyItemList.size(); i++) {
 
-
-            mArcPaint.setStyle(Paint.Style.FILL);
-            mArcPaint.setColor(mLuckyItemList.get(i).color);
-            canvas.drawArc(mRange, tmpAngle, sweepAngle, true, mArcPaint);
+            if (mLuckyItemList.get(i).color != 0) {
+                mArcPaint.setStyle(Paint.Style.FILL);
+                mArcPaint.setColor(mLuckyItemList.get(i).color);
+                canvas.drawArc(mRange, tmpAngle, sweepAngle, true, mArcPaint);
+            }
 
             if (borderColor != 0 && mEdgeWidth > 0) {
                 mArcPaint.setStyle(Paint.Style.STROKE);
@@ -154,18 +167,25 @@ public class PielView extends View {
                 canvas.drawArc(mRange, tmpAngle, sweepAngle, true, mArcPaint);
             }
 
-            drawTopText(canvas, tmpAngle, sweepAngle, mLuckyItemList.get(i).topText, mLuckyItemList.get(i).color);
-            drawImage(canvas, tmpAngle, BitmapFactory.decodeResource(getResources(),
-                    mLuckyItemList.get(i).icon));
+            int sliceColor = mLuckyItemList.get(i).color != 0 ? mLuckyItemList.get(i).color : defaultBackgroundColor;
 
+            if (!TextUtils.isEmpty(mLuckyItemList.get(i).topText))
+                drawTopText(canvas, tmpAngle, sweepAngle, mLuckyItemList.get(i).topText, sliceColor);
+            if (!TextUtils.isEmpty(mLuckyItemList.get(i).secondaryText))
+                drawSecondaryText(canvas, tmpAngle, sweepAngle, mLuckyItemList.get(i).secondaryText, sliceColor);
+
+            if (mLuckyItemList.get(i).icon != 0)
+                drawImage(canvas, tmpAngle, BitmapFactory.decodeResource(getResources(),
+                        mLuckyItemList.get(i).icon));
             tmpAngle += sweepAngle;
         }
 
         drawCenterImage(canvas, drawableCenterImage);
+
     }
 
     private void drawBackgroundColor(Canvas canvas, int color) {
-        if (color == -1)
+        if (color == 0)
             return;
         mBackgroundPaint = new Paint();
         mBackgroundPaint.setColor(color);
@@ -209,12 +229,19 @@ public class PielView extends View {
     }
 
     private void drawCenterImage(Canvas canvas, Drawable drawable) {
-        //Bitmap bitmap = BitmapFactory.decodeResource(getResources(), drawable);
+        ;
         Bitmap bitmap = LuckyWheelUtils.drawableToBitmap(drawable);
-        bitmap = Bitmap.createScaledBitmap(bitmap, 90, 90, false);
+        bitmap = Bitmap.createScaledBitmap(bitmap, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), false);
         canvas.drawBitmap(bitmap, getMeasuredWidth() / 2 - bitmap.getWidth() / 2,
                 getMeasuredHeight() / 2 - bitmap.getHeight() / 2, null);
     }
+
+    private boolean isColorDark(int color) {
+        double colorValue = ColorUtils.calculateLuminance(color);
+        double compareValue = 0.30d;
+        return colorValue <= compareValue;
+    }
+
 
     /**
      * @param canvas
@@ -229,6 +256,8 @@ public class PielView extends View {
         if (textColor == 0)
             mTextPaint.setColor(isColorDark(backgroundColor) ? 0xffffffff : 0xff000000);
 
+        mTextPaint.setTextAlign(Paint.Align.LEFT);
+        mTextPaint.setTextSize(30f);
         float textWidth = mTextPaint.measureText(mStr);
         int hOffset = (int) (mRadius * Math.PI / mLuckyItemList.size() / 2 - textWidth / 2);
 
@@ -238,28 +267,39 @@ public class PielView extends View {
     }
 
 
-    public static boolean isColorDark(int color) {
-        double colorValue = ColorUtils.calculateLuminance(color);
-        double compareValue = 0.30d;
-        return colorValue <= compareValue;
-    }
-
     /**
      * @param canvas
      * @param tmpAngle
      * @param sweepAngle
      * @param mStr
      */
-    private void drawSecondaryText(Canvas canvas, float tmpAngle, float sweepAngle, String mStr) {
+    private void drawSecondaryText(Canvas canvas, float tmpAngle, float sweepAngle, String mStr, int backgroundColor) {
+        canvas.save();
+        int arraySize = mLuckyItemList.size();
+
+        if (textColor == 0)
+            mTextPaint.setColor(isColorDark(backgroundColor) ? 0xffffffff : 0xff000000);
+
+        mTextPaint.setTextSize(60f);
+        mTextPaint.setTextAlign(Paint.Align.LEFT);
+
+        int imgWidth = 180;
+
+        float initFloat = (tmpAngle + 360f / arraySize / 2);
+        float angle = (float) (initFloat * Math.PI / 180);
+
+        int x = (int) (mCenter + mRadius / 2 / 2 * Math.cos(angle));
+        int y = (int) (mCenter + mRadius / 2 / 2 * Math.sin(angle));
+
+        RectF rect = new RectF(x + imgWidth, y,
+                x - imgWidth, y);
+
         Path path = new Path();
-        path.addArc(mRange, tmpAngle, sweepAngle);
-
-        float textWidth = mTextPaint.measureText(mStr);
-        int hOffset = (int) (mRadius * Math.PI / mLuckyItemList.size() / 2 - textWidth / 2);
-
-        int vOffset = mRadius / 2 / 4;
-
-        canvas.drawTextOnPath(mStr, path, hOffset, vOffset, mTextPaint);
+        path.addRect(rect, Path.Direction.CW);
+        path.close();
+        canvas.rotate(initFloat - (arraySize / 9f), x, y);
+        canvas.drawTextOnPath(mStr, path, arraySize, arraySize, mTextPaint);
+        canvas.restore();
     }
 
     /**
@@ -283,7 +323,41 @@ public class PielView extends View {
         if (isRunning) {
             return;
         }
-        setRotation(0);
+
+        //If the staring position is already off 0 degrees, make an illusion that the rotation has smoothly been triggered.
+        // But this inital animation will just reset the position of the circle to 0 degreees.
+        if (getRotation() != 0.0f) {
+            setRotation(getRotation() % 360f);
+            //The multiplier is to do a big rotation again if the position is already near 360.
+            float multiplier = getRotation() > 200f ? 2 : 1;
+            animate()
+                    .setInterpolator(new AccelerateInterpolator())
+                    .setDuration(500L)
+                    .setListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+                            isRunning = true;
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            isRunning = false;
+                            setRotation(0);
+                            rotateTo(index);
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animation) {
+                        }
+                    })
+                    .rotation(360f * multiplier)
+                    .start();
+            return;
+        }
 
         float targetAngle = 360f * mRoundOfNumber + 270f - getAngleOfIndexTarget(index) - (360f / mLuckyItemList.size()) / 2;
         animate()
@@ -298,6 +372,7 @@ public class PielView extends View {
                     @Override
                     public void onAnimationEnd(Animator animation) {
                         isRunning = false;
+                        setRotation(getRotation() % 360f);
                         if (mPieRotateListener != null) {
                             mPieRotateListener.rotateDone(index);
                         }
@@ -317,6 +392,28 @@ public class PielView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        return false;
+        if (isRunning) {
+            return false;
+        }
+        final float x = event.getX();
+        final float y = event.getY();
+
+        final float xc = getWidth() / 2.0f;
+        final float yc = getHeight() / 2.0f;
+
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                viewRotation = getRotation();
+                fingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
+                break;
+            case MotionEvent.ACTION_MOVE:
+                newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
+                setRotation((float) (viewRotation + newFingerRotation - fingerRotation));
+                break;
+            case MotionEvent.ACTION_UP:
+                fingerRotation = newFingerRotation = 0.0f;
+                break;
+        }
+        return true;
     }
 }
