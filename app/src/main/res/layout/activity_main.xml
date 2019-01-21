@@ -14,7 +14,7 @@
     <rubikstudio.library.LuckyWheelView
         android:layout_centerInParent="true"
         app:lkwBackgroundColor="#FF9800"
-        app:lkwTextColor="#263238"
+        app:lkwTopTextColor="#263238"
         app:lkwCenterImage="@drawable/wheel2"
         app:lkwCursor="@drawable/ic_cursor"
         android:id="@+id/luckyWheel"
