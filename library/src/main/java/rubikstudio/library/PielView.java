@@ -58,8 +58,8 @@ public class PielView extends View {
     private int predeterminedNumber = -1;
 
     float viewRotation;
-    float fingerRotation;
-    float newFingerRotation;
+    double fingerRotation;
+    double newFingerRotation, newfingerRotationDelta1, newfingerRotationDelta2;
 
     private List<LuckyItem> mLuckyItemList;
 
@@ -432,35 +432,34 @@ public class PielView extends View {
             return false;
         }
 
-        final float x = event.getRawX();
-        final float y = event.getRawY();
+        final float x = event.getX();
+        final float y = event.getY();
+
+        final float xc = getWidth() / 2.0f;
+        final float yc = getHeight() / 2.0f;
 
 
-        switch (event.getActionMasked()) {
+        switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 viewRotation = (getRotation() + 360f) % 360f;
-                fingerRotation = touchAngle(x, y, mCenter, mCenter);
-
-                break;
+                fingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
+                return true;
             case MotionEvent.ACTION_MOVE:
-                newFingerRotation = touchAngle(x, y, mCenter, mCenter);
-                float computationalRotation = newFingerRotation - fingerRotation;
-                //      Log.d("Rotate", "Old Finger Rotation " + fingerRotation);
-                Log.d("Rotate", "New Finger  Rotation " + newFingerRotation);
-                float newRotationValue = viewRotation + computationalRotation;
-                //      Log.d("Rotate", "Computational Rotation " + computationalRotation);
-                //     Log.d("Rotate", "New Rotation Value " + newRotationValue);
-
+                newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
+                double computationalRotation = newFingerRotation - fingerRotation;
+                float newRotationValue = (viewRotation + (float) computationalRotation + 360f) % 360f;
                 setRotation(newRotationValue);
-                break;
+                return true;
             case MotionEvent.ACTION_UP:
-                newFingerRotation = touchAngle(x, y, mCenter, mCenter);
-                Log.d("Rotate", "Final rotation value " + viewRotation);
+                newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
+                double computationalRotationUp = newFingerRotation - fingerRotation;
+                float newRotationValueUp = (viewRotation + (float) computationalRotationUp + 360f) % 360f;
+                double flingDiff = newRotationValueUp - viewRotation;
+                Log.d("Rotation", "View Rotation value " + viewRotation);
+                Log.d("Rotation", "New  Rotation value " + newRotationValueUp);
+                Log.d("Rotation", "Difference value " + flingDiff);
 
-                double flingDiff = newFingerRotation - fingerRotation;
-                Log.d("Rotate", "Finger fling difference " + flingDiff);
-
-                if (flingDiff <= -10 ) {
+                if (flingDiff <= -60 && flingDiff > -250) {
                     if (predeterminedNumber > -1) {
                         rotateTo(predeterminedNumber, SpinRotation.COUNTERCLOCKWISE);
                     } else {
@@ -468,7 +467,7 @@ public class PielView extends View {
                     }
                 }
 
-                if (flingDiff >= 50) {
+                if (flingDiff >= 60 && flingDiff < 250) {
                     if (predeterminedNumber > -1) {
                         rotateTo(predeterminedNumber, SpinRotation.CLOCKWISE);
                     } else {
@@ -477,17 +476,11 @@ public class PielView extends View {
                 }
 
                 fingerRotation = newFingerRotation;
-                break;
+                return true;
         }
-        return true;
+        return super.onTouchEvent(event);
     }
 
-
-    private float touchAngle(float touchX, float touchY, float xCenter, float yCenter) {
-        double dX = touchX - xCenter;
-        double dY = touchY - yCenter;
-        return (float) Math.toDegrees(Math.atan2(dY, dX));
-    }
 
     private int getFallBackRandomIndex() {
         Random rand = new Random();
