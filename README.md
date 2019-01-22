@@ -63,7 +63,7 @@ luckyWheelView.setLuckyRoundItemSelectedListener(new LuckyWheelView.LuckyRoundIt
 You can setting these properties of the lucky wheel view with xml :
 ```xml
     app:lkwBackgroundColor="#FF9800"
-    app:lkwTextColor="#263238"
+    app:lkwTopTextColor="#263238"
     app:lkwCenterImage="@drawable/wheel2"
     app:lkwCursor="@drawable/ic_cursor"
 ```
