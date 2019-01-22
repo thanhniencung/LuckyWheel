@@ -58,8 +58,8 @@ public class PielView extends View {
     private int predeterminedNumber = -1;
 
     float viewRotation;
-    double fingerRotation;
-    double newFingerRotation;
+    float fingerRotation;
+    float newFingerRotation;
 
     private List<LuckyItem> mLuckyItemList;
 
@@ -432,50 +432,61 @@ public class PielView extends View {
             return false;
         }
 
-        final float x = event.getX();
-        final float y = event.getY();
+        final float x = event.getRawX();
+        final float y = event.getRawY();
 
-        final float xc = getWidth() / 2.0f;
-        final float yc = getHeight() / 2.0f;
 
-        switch (event.getAction()) {
+        switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
-                viewRotation = getRotation();
-                fingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
+                viewRotation = (getRotation() + 360f) % 360f;
+                fingerRotation = touchAngle(x, y, mCenter, mCenter);
+
                 break;
             case MotionEvent.ACTION_MOVE:
-                newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
-                float newRotationValue = (float) (viewRotation + newFingerRotation - fingerRotation);
+                newFingerRotation = touchAngle(x, y, mCenter, mCenter);
+                float computationalRotation = newFingerRotation - fingerRotation;
+                //      Log.d("Rotate", "Old Finger Rotation " + fingerRotation);
+                Log.d("Rotate", "New Finger  Rotation " + newFingerRotation);
+                float newRotationValue = viewRotation + computationalRotation;
+                //      Log.d("Rotate", "Computational Rotation " + computationalRotation);
+                //     Log.d("Rotate", "New Rotation Value " + newRotationValue);
+
                 setRotation(newRotationValue);
                 break;
             case MotionEvent.ACTION_UP:
-                newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
+                newFingerRotation = touchAngle(x, y, mCenter, mCenter);
+                Log.d("Rotate", "Final rotation value " + viewRotation);
 
-                Log.d("Rotate", "Old Finger Rotation " + fingerRotation);
-                Log.d("Rotate", "New Finger Rotation " + newFingerRotation);
-
-                double flingDiff = viewRotation + newFingerRotation - fingerRotation;
+                double flingDiff = newFingerRotation - fingerRotation;
                 Log.d("Rotate", "Finger fling difference " + flingDiff);
-//                if (flingDiff >= 150 && flingDiff < 250) {
-//                    if (predeterminedNumber > -1) {
-//                        rotateTo(predeterminedNumber, SpinRotation.COUNTERCLOCKWISE);
-//                    } else {
-//                        rotateTo(getFallBackRandomIndex(), SpinRotation.COUNTERCLOCKWISE);
-//                    }
-//                }
-//
-//                if (flingDiff >= 250) {
-//                    if (predeterminedNumber > -1) {
-//                        rotateTo(predeterminedNumber, SpinRotation.CLOCKWISE);
-//                    } else {
-//                        rotateTo(getFallBackRandomIndex(), SpinRotation.CLOCKWISE);
-//                    }
-//                }
+
+                if (flingDiff <= -10 ) {
+                    if (predeterminedNumber > -1) {
+                        rotateTo(predeterminedNumber, SpinRotation.COUNTERCLOCKWISE);
+                    } else {
+                        rotateTo(getFallBackRandomIndex(), SpinRotation.COUNTERCLOCKWISE);
+                    }
+                }
+
+                if (flingDiff >= 50) {
+                    if (predeterminedNumber > -1) {
+                        rotateTo(predeterminedNumber, SpinRotation.CLOCKWISE);
+                    } else {
+                        rotateTo(getFallBackRandomIndex(), SpinRotation.CLOCKWISE);
+                    }
+                }
 
                 fingerRotation = newFingerRotation;
                 break;
         }
         return true;
+    }
+
+
+    private float touchAngle(float touchX, float touchY, float xCenter, float yCenter) {
+        double dX = touchX - xCenter;
+        double dY = touchY - yCenter;
+        return (float) Math.toDegrees(Math.atan2(dY, dX));
     }
 
     private int getFallBackRandomIndex() {
