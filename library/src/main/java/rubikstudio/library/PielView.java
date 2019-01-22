@@ -43,6 +43,8 @@ public class PielView extends View {
     private int mCenter;
     private int mPadding;
     private int mTopTextPadding;
+    private int mTopTextSize;
+    private int mSecondaryTextSize;
     private int mRoundOfNumber = 4;
     private int mEdgeWidth = -1;
     private boolean isRunning = false;
@@ -115,6 +117,16 @@ public class PielView extends View {
 
     public void setPieCenterImage(Drawable drawable) {
         drawableCenterImage = drawable;
+        invalidate();
+    }
+
+    public void setTopTextSize(int size) {
+        mTopTextSize = size;
+        invalidate();
+    }
+
+    public void setSecondaryTextSizeSize(int size) {
+        mSecondaryTextSize = size;
         invalidate();
     }
 
@@ -259,7 +271,7 @@ public class PielView extends View {
         Typeface typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL);
         mTextPaint.setTypeface(typeface);
         mTextPaint.setTextAlign(Paint.Align.LEFT);
-        mTextPaint.setTextSize(25f);
+        mTextPaint.setTextSize(mTopTextSize);
         float textWidth = mTextPaint.measureText(mStr);
         int hOffset = (int) (mRadius * Math.PI / mLuckyItemList.size() / 2 - textWidth / 2);
 
@@ -282,10 +294,9 @@ public class PielView extends View {
         if (textColor == 0)
             mTextPaint.setColor(isColorDark(backgroundColor) ? 0xffffffff : 0xff000000);
 
-
         Typeface typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD);
         mTextPaint.setTypeface(typeface);
-        mTextPaint.setTextSize(60f);
+        mTextPaint.setTextSize(mSecondaryTextSize);
         mTextPaint.setTextAlign(Paint.Align.LEFT);
 
         float textWidth = mTextPaint.measureText(mStr);

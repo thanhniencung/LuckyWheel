@@ -20,6 +20,8 @@ import rubikstudio.library.model.LuckyItem;
 public class LuckyWheelView extends RelativeLayout implements PielView.PieRotateListener {
     private int mBackgroundColor;
     private int mTextColor;
+    private int mTopTextSize;
+    private int mSecondaryTextSize;
     private int mBorderColor;
     private int mTopTextPadding;
     private int mEdgeWidth;
@@ -64,6 +66,8 @@ public class LuckyWheelView extends RelativeLayout implements PielView.PieRotate
         if (attrs != null) {
             TypedArray typedArray = ctx.obtainStyledAttributes(attrs, R.styleable.LuckyWheelView);
             mBackgroundColor = typedArray.getColor(R.styleable.LuckyWheelView_lkwBackgroundColor, 0xffcc0000);
+            mTopTextSize = typedArray.getDimensionPixelSize(R.styleable.LuckyWheelView_lkwTopTextSize, (int) LuckyWheelUtils.convertDpToPixel(10f, getContext()));
+            mSecondaryTextSize = typedArray.getDimensionPixelSize(R.styleable.LuckyWheelView_lkwSecondaryTextSize, (int) LuckyWheelUtils.convertDpToPixel(20f, getContext()));
             mTextColor = typedArray.getColor(R.styleable.LuckyWheelView_lkwTopTextColor, 0);
             mTopTextPadding = typedArray.getDimensionPixelSize(R.styleable.LuckyWheelView_lkwTopTextPadding, (int) LuckyWheelUtils.convertDpToPixel(10f, getContext())) + (int) LuckyWheelUtils.convertDpToPixel(10f, getContext());
             mCursorImage = typedArray.getDrawable(R.styleable.LuckyWheelView_lkwCursor);
@@ -82,9 +86,12 @@ public class LuckyWheelView extends RelativeLayout implements PielView.PieRotate
         pielView.setPieRotateListener(this);
         pielView.setPieBackgroundColor(mBackgroundColor);
         pielView.setTopTextPadding(mTopTextPadding);
+        pielView.setTopTextSize(mTopTextSize);
+        pielView.setSecondaryTextSizeSize(mSecondaryTextSize);
         pielView.setPieCenterImage(mCenterImage);
         pielView.setBorderColor(mBorderColor);
         pielView.setBorderWidth(mEdgeWidth);
+
 
         if (mTextColor != 0)
             pielView.setPieTextColor(mTextColor);
