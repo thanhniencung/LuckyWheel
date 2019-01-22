@@ -10,6 +10,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.text.TextPaint;
 import android.text.TextUtils;
@@ -181,7 +182,6 @@ public class PielView extends View {
         }
 
         drawCenterImage(canvas, drawableCenterImage);
-
     }
 
     private void drawBackgroundColor(Canvas canvas, int color) {
@@ -256,8 +256,10 @@ public class PielView extends View {
         if (textColor == 0)
             mTextPaint.setColor(isColorDark(backgroundColor) ? 0xffffffff : 0xff000000);
 
+        Typeface typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL);
+        mTextPaint.setTypeface(typeface);
         mTextPaint.setTextAlign(Paint.Align.LEFT);
-        mTextPaint.setTextSize(30f);
+        mTextPaint.setTextSize(25f);
         float textWidth = mTextPaint.measureText(mStr);
         int hOffset = (int) (mRadius * Math.PI / mLuckyItemList.size() / 2 - textWidth / 2);
 
@@ -280,10 +282,13 @@ public class PielView extends View {
         if (textColor == 0)
             mTextPaint.setColor(isColorDark(backgroundColor) ? 0xffffffff : 0xff000000);
 
+
+        Typeface typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD);
+        mTextPaint.setTypeface(typeface);
         mTextPaint.setTextSize(60f);
         mTextPaint.setTextAlign(Paint.Align.LEFT);
 
-        int imgWidth = 180;
+        float textWidth = mTextPaint.measureText(mStr);
 
         float initFloat = (tmpAngle + 360f / arraySize / 2);
         float angle = (float) (initFloat * Math.PI / 180);
@@ -291,14 +296,14 @@ public class PielView extends View {
         int x = (int) (mCenter + mRadius / 2 / 2 * Math.cos(angle));
         int y = (int) (mCenter + mRadius / 2 / 2 * Math.sin(angle));
 
-        RectF rect = new RectF(x + imgWidth, y,
-                x - imgWidth, y);
+        RectF rect = new RectF(x + textWidth, y,
+                x - textWidth, y);
 
         Path path = new Path();
         path.addRect(rect, Path.Direction.CW);
         path.close();
         canvas.rotate(initFloat - (arraySize / 9f), x, y);
-        canvas.drawTextOnPath(mStr, path, arraySize, arraySize, mTextPaint);
+        canvas.drawTextOnPath(mStr, path, arraySize - 30, arraySize, mTextPaint);
         canvas.restore();
     }
 
