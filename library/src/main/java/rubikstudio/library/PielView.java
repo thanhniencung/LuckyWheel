@@ -5,7 +5,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
@@ -15,15 +14,17 @@ import android.graphics.drawable.Drawable;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 
 import java.util.List;
+import java.util.Random;
 
+import androidx.annotation.IntDef;
 import androidx.core.graphics.ColorUtils;
 import rubikstudio.library.model.LuckyItem;
 
@@ -53,6 +54,8 @@ public class PielView extends View {
     private int defaultBackgroundColor = 0;
     private Drawable drawableCenterImage;
     private int textColor = 0;
+
+    private int predeterminedNumber = -1;
 
     float viewRotation;
     double fingerRotation;
@@ -313,8 +316,8 @@ public class PielView extends View {
         Path path = new Path();
         path.addRect(rect, Path.Direction.CW);
         path.close();
-        canvas.rotate(initFloat - (arraySize / 9f), x, y);
-        canvas.drawTextOnPath(mStr, path, arraySize - 30, arraySize, mTextPaint);
+        canvas.rotate(initFloat + (arraySize / 18f), x, y);
+        canvas.drawTextOnPath(mStr, path, arraySize - 30, arraySize + (arraySize / 1.5f), mTextPaint);
         canvas.restore();
     }
 
@@ -332,13 +335,26 @@ public class PielView extends View {
         mRoundOfNumber = numberOfRound;
     }
 
+
+    public void setPredeterminedNumber(int predeterminedNumber) {
+        this.predeterminedNumber = predeterminedNumber;
+    }
+
+    public void rotateTo(final int index) {
+        Random rand = new Random();
+        rotateTo(index, (rand.nextInt() * 3) % 2);
+    }
+
     /**
      * @param index
+     * @param rotation, spin orientation of the wheel if clockwise or counterclockwise
      */
-    public void rotateTo(final int index) {
+    public void rotateTo(final int index, @SpinRotation final int rotation) {
         if (isRunning) {
             return;
         }
+
+        int rotationAssess = rotation <= 0 ? 1 : -1;
 
         //If the staring position is already off 0 degrees, make an illusion that the rotation has smoothly been triggered.
         // But this inital animation will just reset the position of the circle to 0 degreees.
@@ -359,7 +375,7 @@ public class PielView extends View {
                         public void onAnimationEnd(Animator animation) {
                             isRunning = false;
                             setRotation(0);
-                            rotateTo(index);
+                            rotateTo(index, rotation);
                         }
 
                         @Override
@@ -370,12 +386,16 @@ public class PielView extends View {
                         public void onAnimationRepeat(Animator animation) {
                         }
                     })
-                    .rotation(360f * multiplier)
+                    .rotation(360f * multiplier * rotationAssess)
                     .start();
             return;
         }
 
-        float targetAngle = 360f * mRoundOfNumber + 270f - getAngleOfIndexTarget(index) - (360f / mLuckyItemList.size()) / 2;
+        // This addition of another round count for counterclockwise is to simulate the perception of the same number of spin
+        // if you still need to reach the same outcome of a positive degrees rotation with the number of rounds reversed.
+        if (rotationAssess < 0) mRoundOfNumber++;
+
+        float targetAngle = ((360f * mRoundOfNumber * rotationAssess) + 270f - getAngleOfIndexTarget(index) - (360f / mLuckyItemList.size()) / 2);
         animate()
                 .setInterpolator(new DecelerateInterpolator())
                 .setDuration(mRoundOfNumber * 1000 + 900L)
@@ -411,6 +431,7 @@ public class PielView extends View {
         if (isRunning) {
             return false;
         }
+
         final float x = event.getX();
         final float y = event.getY();
 
@@ -424,12 +445,51 @@ public class PielView extends View {
                 break;
             case MotionEvent.ACTION_MOVE:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
-                setRotation((float) (viewRotation + newFingerRotation - fingerRotation));
+                float newRotationValue = (float) (viewRotation + newFingerRotation - fingerRotation);
+                setRotation(newRotationValue);
                 break;
             case MotionEvent.ACTION_UP:
-                fingerRotation = newFingerRotation = 0.0f;
+                newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
+
+                Log.d("Rotate", "Old Finger Rotation " + fingerRotation);
+                Log.d("Rotate", "New Finger Rotation " + newFingerRotation);
+
+                double flingDiff = viewRotation + newFingerRotation - fingerRotation;
+                Log.d("Rotate", "Finger fling difference " + flingDiff);
+//                if (flingDiff >= 150 && flingDiff < 250) {
+//                    if (predeterminedNumber > -1) {
+//                        rotateTo(predeterminedNumber, SpinRotation.COUNTERCLOCKWISE);
+//                    } else {
+//                        rotateTo(getFallBackRandomIndex(), SpinRotation.COUNTERCLOCKWISE);
+//                    }
+//                }
+//
+//                if (flingDiff >= 250) {
+//                    if (predeterminedNumber > -1) {
+//                        rotateTo(predeterminedNumber, SpinRotation.CLOCKWISE);
+//                    } else {
+//                        rotateTo(getFallBackRandomIndex(), SpinRotation.CLOCKWISE);
+//                    }
+//                }
+
+                fingerRotation = newFingerRotation;
                 break;
         }
         return true;
+    }
+
+    private int getFallBackRandomIndex() {
+        Random rand = new Random();
+        return rand.nextInt(mLuckyItemList.size() - 1) + 0;
+    }
+
+
+    @IntDef({
+            SpinRotation.CLOCKWISE,
+            SpinRotation.COUNTERCLOCKWISE
+    })
+    @interface SpinRotation {
+        int CLOCKWISE = 0;
+        int COUNTERCLOCKWISE = 1;
     }
 }

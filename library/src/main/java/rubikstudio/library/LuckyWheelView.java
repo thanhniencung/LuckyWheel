@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import java.util.List;
+import java.util.Random;
 
 import rubikstudio.library.model.LuckyItem;
 
@@ -133,6 +134,13 @@ public class LuckyWheelView extends RelativeLayout implements PielView.PieRotate
      */
     public void setRound(int numberOfRound) {
         pielView.setRound(numberOfRound);
+    }
+
+    /**
+     * @param fixedNumber
+     */
+    public void setPredeterminedNumber(int fixedNumber) {
+        pielView.setPredeterminedNumber(fixedNumber);
     }
 
     public void startLuckyWheelWithTargetIndex(int index) {
