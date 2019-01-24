@@ -59,7 +59,6 @@ public class PielView extends View {
 
     float viewRotation;
     double fingerRotation;
-    double newFingerRotation, newfingerRotationDelta1, newfingerRotationDelta2;
 
     private List<LuckyItem> mLuckyItemList;
 
@@ -438,6 +437,7 @@ public class PielView extends View {
         final float xc = getWidth() / 2.0f;
         final float yc = getHeight() / 2.0f;
 
+        double newFingerRotation;
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
@@ -446,20 +446,26 @@ public class PielView extends View {
                 return true;
             case MotionEvent.ACTION_MOVE:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
-                double computationalRotation = newFingerRotation - fingerRotation;
-                float newRotationValue = (viewRotation + (float) computationalRotation + 360f) % 360f;
-                setRotation(newRotationValue);
+                setRotation(newRotationValue(viewRotation, fingerRotation, newFingerRotation));
                 return true;
             case MotionEvent.ACTION_UP:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
-                double computationalRotationUp = newFingerRotation - fingerRotation;
-                float newRotationValueUp = (viewRotation + (float) computationalRotationUp + 360f) % 360f;
-                double flingDiff = newRotationValueUp - viewRotation;
+                float computedRotation = newRotationValue(viewRotation, fingerRotation, newFingerRotation);
+
+                // These operators are added so that fling difference can be evaluated
+                // with usually numbers that are only around more or less 100 / -100.
+                if (computedRotation <= -250f) {
+                    computedRotation += 360f;
+                } else if (computedRotation >= 250f) {
+                    computedRotation -= 360f;
+                }
+
+                double flingDiff = computedRotation - viewRotation;
                 Log.d("Rotation", "View Rotation value " + viewRotation);
-                Log.d("Rotation", "New  Rotation value " + newRotationValueUp);
+                Log.d("Rotation", "New Computed  value " + computedRotation);
                 Log.d("Rotation", "Difference value " + flingDiff);
 
-                if (flingDiff <= -60 && flingDiff > -250) {
+                if (flingDiff <= -60) {
                     if (predeterminedNumber > -1) {
                         rotateTo(predeterminedNumber, SpinRotation.COUNTERCLOCKWISE);
                     } else {
@@ -467,7 +473,7 @@ public class PielView extends View {
                     }
                 }
 
-                if (flingDiff >= 60 && flingDiff < 250) {
+                if (flingDiff >= 60) {
                     if (predeterminedNumber > -1) {
                         rotateTo(predeterminedNumber, SpinRotation.CLOCKWISE);
                     } else {
@@ -481,6 +487,10 @@ public class PielView extends View {
         return super.onTouchEvent(event);
     }
 
+    private float newRotationValue(final float originalWheenRotation, final double originalFingerRotation, final double newFingerRotation) {
+        double computationalRotation = newFingerRotation - originalFingerRotation;
+        return (originalWheenRotation + (float) computationalRotation + 360f) % 360f;
+    }
 
     private int getFallBackRandomIndex() {
         Random rand = new Random();
