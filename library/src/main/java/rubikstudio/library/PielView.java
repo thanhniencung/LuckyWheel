@@ -59,6 +59,8 @@ public class PielView extends View {
 
     float viewRotation;
     double fingerRotation;
+    long downPressTime, upPressTime;
+
 
     private List<LuckyItem> mLuckyItemList;
 
@@ -443,6 +445,7 @@ public class PielView extends View {
             case MotionEvent.ACTION_DOWN:
                 viewRotation = (getRotation() + 360f) % 360f;
                 fingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
+                downPressTime = event.getEventTime();
                 return true;
             case MotionEvent.ACTION_MOVE:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
@@ -451,6 +454,15 @@ public class PielView extends View {
             case MotionEvent.ACTION_UP:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
                 float computedRotation = newRotationValue(viewRotation, fingerRotation, newFingerRotation);
+
+                fingerRotation = newFingerRotation;
+
+                // This computes if you're holding the tap for too long
+                upPressTime = event.getEventTime();
+                if (upPressTime - downPressTime > 700L) {
+                    Log.d("Tap detect", "Disregarding the touch since the tap is too slow");
+                    return true;
+                }
 
                 // These operators are added so that fling difference can be evaluated
                 // with usually numbers that are only around more or less 100 / -100.
@@ -461,6 +473,15 @@ public class PielView extends View {
                 }
 
                 double flingDiff = computedRotation - viewRotation;
+                if (flingDiff >= 200 || flingDiff <= -200) {
+                    if (viewRotation <= -50f) {
+                        viewRotation += 360f;
+                    } else if (viewRotation >= 50f) {
+                        viewRotation -= 360f;
+                    }
+                }
+
+                flingDiff = computedRotation - viewRotation;
                 Log.d("Rotation", "View Rotation value " + viewRotation);
                 Log.d("Rotation", "New Computed  value " + computedRotation);
                 Log.d("Rotation", "Difference value " + flingDiff);
@@ -481,7 +502,6 @@ public class PielView extends View {
                     }
                 }
 
-                fingerRotation = newFingerRotation;
                 return true;
         }
         return super.onTouchEvent(event);
