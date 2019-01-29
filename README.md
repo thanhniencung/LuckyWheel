@@ -10,12 +10,23 @@ Include LuckyWheel widget in your layout:
 <rubikstudio.library.LuckyWheelView
     android:layout_centerInParent="true"
     app:lkwBackgroundColor="#FF9800"
-    app:lkwTextColor="#263238"
+    app:lkwTopTextColor="#263238"
     app:lkwCenterImage="@drawable/wheel2"
     app:lkwCursor="@drawable/ic_cursor"
     android:id="@+id/luckyWheel"
     android:layout_width="300dp"
     android:layout_height="300dp" />
+```
+
+You also have the option to add the following parameters:
+
+```xml
+...
+        app:lkwEdgeColor="#e2e5eb"
+        app:lkwEdgeWidth="25"
+        app:lkwTopTextPadding="10dp"
+        app:lkwTopTextSize="12sp"
+        app:lkwSecondaryTextSize="25sp" />
 ```
 
 And in your code :
@@ -25,7 +36,7 @@ LuckyWheelView luckyWheelView = (LuckyWheelView) findViewById(R.id.luckyWheel);
 List<LuckyItem> data = new ArrayList<>();
 for (int i=0; i<12; i++) {
     LuckyItem luckyItem = new LuckyItem();
-    luckyItem1.text = "Item " + i;
+    luckyItem1.topText = "Item " + i;
     luckyItem1.icon = R.drawable.test;
     luckyItem1.color = 0xffFFF3E0;
     data.add(luckyItem);
@@ -52,7 +63,7 @@ luckyWheelView.setLuckyRoundItemSelectedListener(new LuckyWheelView.LuckyRoundIt
 You can setting these properties of the lucky wheel view with xml :
 ```xml
     app:lkwBackgroundColor="#FF9800"
-    app:lkwTextColor="#263238"
+    app:lkwTopTextColor="#263238"
     app:lkwCenterImage="@drawable/wheel2"
     app:lkwCursor="@drawable/ic_cursor"
 ```
