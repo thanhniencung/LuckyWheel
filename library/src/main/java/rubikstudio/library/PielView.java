@@ -60,6 +60,7 @@ public class PielView extends View {
     float viewRotation;
     double fingerRotation;
     long downPressTime, upPressTime;
+    double newRotationStore[] = new double[3];
 
 
     private List<LuckyItem> mLuckyItemList;
@@ -189,7 +190,7 @@ public class PielView extends View {
             if (!TextUtils.isEmpty(mLuckyItemList.get(i).topText))
                 drawTopText(canvas, tmpAngle, sweepAngle, mLuckyItemList.get(i).topText, sliceColor);
             if (!TextUtils.isEmpty(mLuckyItemList.get(i).secondaryText))
-                drawSecondaryText(canvas, tmpAngle, sweepAngle, mLuckyItemList.get(i).secondaryText, sliceColor);
+                drawSecondaryText(canvas, tmpAngle, mLuckyItemList.get(i).secondaryText, sliceColor);
 
             if (mLuckyItemList.get(i).icon != 0)
                 drawImage(canvas, tmpAngle, BitmapFactory.decodeResource(getResources(),
@@ -288,10 +289,10 @@ public class PielView extends View {
     /**
      * @param canvas
      * @param tmpAngle
-     * @param sweepAngle
      * @param mStr
+     * @param backgroundColor
      */
-    private void drawSecondaryText(Canvas canvas, float tmpAngle, float sweepAngle, String mStr, int backgroundColor) {
+    private void drawSecondaryText(Canvas canvas, float tmpAngle, String mStr, int backgroundColor) {
         canvas.save();
         int arraySize = mLuckyItemList.size();
 
@@ -318,7 +319,8 @@ public class PielView extends View {
         path.addRect(rect, Path.Direction.CW);
         path.close();
         canvas.rotate(initFloat + (arraySize / 18f), x, y);
-        canvas.drawTextOnPath(mStr, path, arraySize - 30, arraySize + (arraySize / 1.5f), mTextPaint);
+        canvas.drawTextOnPath(mStr, path, mTopTextPadding / 7f, mTextPaint.getTextSize() / 2.75f, mTextPaint)
+        ;
         canvas.restore();
     }
 
@@ -441,6 +443,7 @@ public class PielView extends View {
 
         double newFingerRotation;
 
+
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 viewRotation = (getRotation() + 360f) % 360f;
@@ -449,7 +452,16 @@ public class PielView extends View {
                 return true;
             case MotionEvent.ACTION_MOVE:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
-                setRotation(newRotationValue(viewRotation, fingerRotation, newFingerRotation));
+
+//                Log.d("Rotation", "X: " + x + " Y: " + y);
+//                Log.d("Rotation", "Raw X: " + event.getRawX());
+//                Log.d("Rotation", "Raw Y: " + event.getRawY());
+
+
+                if (isRotationConsistent(newFingerRotation)) {
+                    setRotation(newRotationValue(viewRotation, fingerRotation, newFingerRotation));
+                }
+
                 return true;
             case MotionEvent.ACTION_UP:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
@@ -515,6 +527,42 @@ public class PielView extends View {
     private int getFallBackRandomIndex() {
         Random rand = new Random();
         return rand.nextInt(mLuckyItemList.size() - 1) + 0;
+    }
+
+
+    private boolean isRotationConsistent(double newRotValue) {
+        double evalValue = newRotValue;
+        //   if (evalValue < 0) evalValue = (evalValue + 360d) % 360d;
+        if (Double.compare(newRotationStore[2], newRotationStore[1]) != 0)
+            newRotationStore[2] = newRotationStore[1];
+        if (Double.compare(newRotationStore[1], newRotationStore[0]) != 0)
+            newRotationStore[1] = newRotationStore[0];
+        newRotationStore[0] = evalValue;
+
+        double secondGap = Math.abs(newRotationStore[2] - newRotationStore[1]);
+        double firstGap = Math.abs(newRotationStore[1] - newRotationStore[0]);
+
+
+        if (//Math.abs(newRotationStore[1] - newRotationStore[0]) >= 15d ||
+                Double.compare(newRotationStore[2], newRotationStore[0]) == 0
+                        || Double.compare(newRotationStore[1], newRotationStore[0]) == 0
+                        || Double.compare(newRotationStore[2], newRotationStore[1]) == 0
+                        || (newRotationStore[0] > newRotationStore[1] && newRotationStore[1] < newRotationStore[2])
+            //       || Math.abs(secondGap - firstGap) >= 10d
+
+        ) {
+            //      Log.e("Rotation", "Double is equal ");
+            return false;
+        } else {
+//
+//            Log.d("Rotation", "Double store 0 value: " + newRotationStore[0]);
+//            Log.d("Rotation", "Double store 1 value: " + newRotationStore[1]);
+//            Log.d("Rotation", "Double store 2 value: " + newRotationStore[2]);
+//            Log.d("Rotation", "Compare value second gap: " + secondGap);
+//            Log.d("Rotation", "Compare value first gap: " + firstGap);
+//            Log.d("Rotation", "New store value: " + evalValue);
+        }
+        return true;
     }
 
 
