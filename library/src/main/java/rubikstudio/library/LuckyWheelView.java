@@ -5,12 +5,14 @@ import android.content.res.TypedArray;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import java.util.List;
-import java.util.Random;
 
 import rubikstudio.library.model.LuckyItem;
 
@@ -100,6 +102,28 @@ public class LuckyWheelView extends RelativeLayout implements PielView.PieRotate
         ivCursorView.setImageDrawable(mCursorImage);
 
         addView(frameLayout);
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        //This is to control that the touch events triggered are only going to the PieView
+        for (int i = 0; i < getChildCount(); i++) {
+            if (isPielView(getChildAt(i))) {
+                return super.dispatchTouchEvent(ev);
+            }
+        }
+        return false;
+    }
+
+    private boolean isPielView(View view) {
+        if (view instanceof ViewGroup) {
+            for (int i = 0; i < getChildCount(); i++) {
+                if (isPielView(((ViewGroup) view).getChildAt(i))) {
+                    return true;
+                }
+            }
+        }
+        return view instanceof PielView;
     }
 
     public void setLuckyWheelBackgrouldColor(int color) {

@@ -1,6 +1,8 @@
 package rubikstudio.library;
 
 import android.animation.Animator;
+import android.animation.TimeInterpolator;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,15 +13,16 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
+import android.view.animation.LinearInterpolator;
 
 import java.util.List;
 import java.util.Random;
@@ -60,6 +63,7 @@ public class PielView extends View {
     float viewRotation;
     double fingerRotation;
     long downPressTime, upPressTime;
+    double newRotationStore[] = new double[3];
 
 
     private List<LuckyItem> mLuckyItemList;
@@ -189,7 +193,7 @@ public class PielView extends View {
             if (!TextUtils.isEmpty(mLuckyItemList.get(i).topText))
                 drawTopText(canvas, tmpAngle, sweepAngle, mLuckyItemList.get(i).topText, sliceColor);
             if (!TextUtils.isEmpty(mLuckyItemList.get(i).secondaryText))
-                drawSecondaryText(canvas, tmpAngle, sweepAngle, mLuckyItemList.get(i).secondaryText, sliceColor);
+                drawSecondaryText(canvas, tmpAngle, mLuckyItemList.get(i).secondaryText, sliceColor);
 
             if (mLuckyItemList.get(i).icon != 0)
                 drawImage(canvas, tmpAngle, BitmapFactory.decodeResource(getResources(),
@@ -288,10 +292,10 @@ public class PielView extends View {
     /**
      * @param canvas
      * @param tmpAngle
-     * @param sweepAngle
      * @param mStr
+     * @param backgroundColor
      */
-    private void drawSecondaryText(Canvas canvas, float tmpAngle, float sweepAngle, String mStr, int backgroundColor) {
+    private void drawSecondaryText(Canvas canvas, float tmpAngle, String mStr, int backgroundColor) {
         canvas.save();
         int arraySize = mLuckyItemList.size();
 
@@ -318,7 +322,7 @@ public class PielView extends View {
         path.addRect(rect, Path.Direction.CW);
         path.close();
         canvas.rotate(initFloat + (arraySize / 18f), x, y);
-        canvas.drawTextOnPath(mStr, path, arraySize - 30, arraySize + (arraySize / 1.5f), mTextPaint);
+        canvas.drawTextOnPath(mStr, path, mTopTextPadding / 7f, mTextPaint.getTextSize() / 2.75f, mTextPaint);
         canvas.restore();
     }
 
@@ -343,14 +347,16 @@ public class PielView extends View {
 
     public void rotateTo(final int index) {
         Random rand = new Random();
-        rotateTo(index, (rand.nextInt() * 3) % 2);
+        rotateTo(index, (rand.nextInt() * 3) % 2, true);
     }
 
     /**
      * @param index
-     * @param rotation, spin orientation of the wheel if clockwise or counterclockwise
+     * @param rotation,  spin orientation of the wheel if clockwise or counterclockwise
+     * @param startSlow, either animates a slow start or an immediate turn based on the trigger
      */
-    public void rotateTo(final int index, @SpinRotation final int rotation) {
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP_MR1)
+    public void rotateTo(final int index, @SpinRotation final int rotation, boolean startSlow) {
         if (isRunning) {
             return;
         }
@@ -361,10 +367,11 @@ public class PielView extends View {
         // But this inital animation will just reset the position of the circle to 0 degreees.
         if (getRotation() != 0.0f) {
             setRotation(getRotation() % 360f);
+            TimeInterpolator animationStart = startSlow ? new AccelerateInterpolator() : new LinearInterpolator();
             //The multiplier is to do a big rotation again if the position is already near 360.
             float multiplier = getRotation() > 200f ? 2 : 1;
             animate()
-                    .setInterpolator(new AccelerateInterpolator())
+                    .setInterpolator(animationStart)
                     .setDuration(500L)
                     .setListener(new Animator.AnimatorListener() {
                         @Override
@@ -376,7 +383,7 @@ public class PielView extends View {
                         public void onAnimationEnd(Animator animation) {
                             isRunning = false;
                             setRotation(0);
-                            rotateTo(index, rotation);
+                            rotateTo(index, rotation, false);
                         }
 
                         @Override
@@ -441,6 +448,7 @@ public class PielView extends View {
 
         double newFingerRotation;
 
+
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 viewRotation = (getRotation() + 360f) % 360f;
@@ -449,7 +457,10 @@ public class PielView extends View {
                 return true;
             case MotionEvent.ACTION_MOVE:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
-                setRotation(newRotationValue(viewRotation, fingerRotation, newFingerRotation));
+
+                if (isRotationConsistent(newFingerRotation)) {
+                    setRotation(newRotationValue(viewRotation, fingerRotation, newFingerRotation));
+                }
                 return true;
             case MotionEvent.ACTION_UP:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
@@ -460,7 +471,7 @@ public class PielView extends View {
                 // This computes if you're holding the tap for too long
                 upPressTime = event.getEventTime();
                 if (upPressTime - downPressTime > 700L) {
-                    Log.d("Tap detect", "Disregarding the touch since the tap is too slow");
+                    // Disregarding the touch since the tap is too slow
                     return true;
                 }
 
@@ -482,23 +493,24 @@ public class PielView extends View {
                 }
 
                 flingDiff = computedRotation - viewRotation;
-                Log.d("Rotation", "View Rotation value " + viewRotation);
-                Log.d("Rotation", "New Computed  value " + computedRotation);
-                Log.d("Rotation", "Difference value " + flingDiff);
 
-                if (flingDiff <= -60) {
+                if (flingDiff <= -60 ||
+                        //If you have a very fast flick / swipe, you an disregard the touch difference
+                        (flingDiff < 0 && flingDiff >= -59 && upPressTime - downPressTime <= 200L)) {
                     if (predeterminedNumber > -1) {
-                        rotateTo(predeterminedNumber, SpinRotation.COUNTERCLOCKWISE);
+                        rotateTo(predeterminedNumber, SpinRotation.COUNTERCLOCKWISE, false);
                     } else {
-                        rotateTo(getFallBackRandomIndex(), SpinRotation.COUNTERCLOCKWISE);
+                        rotateTo(getFallBackRandomIndex(), SpinRotation.COUNTERCLOCKWISE, false);
                     }
                 }
 
-                if (flingDiff >= 60) {
+                if (flingDiff >= 60 ||
+                        //If you have a very fast flick / swipe, you an disregard the touch difference
+                        (flingDiff > 0 && flingDiff <= 59 && upPressTime - downPressTime <= 200L)) {
                     if (predeterminedNumber > -1) {
-                        rotateTo(predeterminedNumber, SpinRotation.CLOCKWISE);
+                        rotateTo(predeterminedNumber, SpinRotation.CLOCKWISE, false);
                     } else {
-                        rotateTo(getFallBackRandomIndex(), SpinRotation.CLOCKWISE);
+                        rotateTo(getFallBackRandomIndex(), SpinRotation.CLOCKWISE, false);
                     }
                 }
 
@@ -515,6 +527,37 @@ public class PielView extends View {
     private int getFallBackRandomIndex() {
         Random rand = new Random();
         return rand.nextInt(mLuckyItemList.size() - 1) + 0;
+    }
+
+    /**
+     * This detects if your finger movement is a result of an actual raw touch event of if it's from a view jitter.
+     * This uses 3 events of rotation temporary storage so that differentiation between swapping touch events can be determined.
+     *
+     * @param newRotValue
+     */
+    private boolean isRotationConsistent(final double newRotValue) {
+        double evalValue = newRotValue;
+
+        if (Double.compare(newRotationStore[2], newRotationStore[1]) != 0) {
+            newRotationStore[2] = newRotationStore[1];
+        }
+        if (Double.compare(newRotationStore[1], newRotationStore[0]) != 0) {
+            newRotationStore[1] = newRotationStore[0];
+        }
+
+        newRotationStore[0] = evalValue;
+
+        if (Double.compare(newRotationStore[2], newRotationStore[0]) == 0
+                || Double.compare(newRotationStore[1], newRotationStore[0]) == 0
+                || Double.compare(newRotationStore[2], newRotationStore[1]) == 0
+
+                //Is the middle event the odd one out
+                || (newRotationStore[0] > newRotationStore[1] && newRotationStore[1] < newRotationStore[2])
+                || (newRotationStore[0] < newRotationStore[1] && newRotationStore[1] > newRotationStore[2])
+        ) {
+            return false;
+        }
+        return true;
     }
 
 
