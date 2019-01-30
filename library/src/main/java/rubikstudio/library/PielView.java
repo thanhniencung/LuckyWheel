@@ -17,12 +17,10 @@ import android.os.Build;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
-import android.view.animation.BaseInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 
@@ -324,8 +322,7 @@ public class PielView extends View {
         path.addRect(rect, Path.Direction.CW);
         path.close();
         canvas.rotate(initFloat + (arraySize / 18f), x, y);
-        canvas.drawTextOnPath(mStr, path, mTopTextPadding / 7f, mTextPaint.getTextSize() / 2.75f, mTextPaint)
-        ;
+        canvas.drawTextOnPath(mStr, path, mTopTextPadding / 7f, mTextPaint.getTextSize() / 2.75f, mTextPaint);
         canvas.restore();
     }
 
@@ -355,7 +352,7 @@ public class PielView extends View {
 
     /**
      * @param index
-     * @param rotation, spin orientation of the wheel if clockwise or counterclockwise
+     * @param rotation,  spin orientation of the wheel if clockwise or counterclockwise
      * @param startSlow, either animates a slow start or an immediate turn based on the trigger
      */
     @TargetApi(Build.VERSION_CODES.LOLLIPOP_MR1)
@@ -461,15 +458,9 @@ public class PielView extends View {
             case MotionEvent.ACTION_MOVE:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
 
-//                Log.d("Rotation", "X: " + x + " Y: " + y);
-//                Log.d("Rotation", "Raw X: " + event.getRawX());
-//                Log.d("Rotation", "Raw Y: " + event.getRawY());
-
-
                 if (isRotationConsistent(newFingerRotation)) {
                     setRotation(newRotationValue(viewRotation, fingerRotation, newFingerRotation));
                 }
-
                 return true;
             case MotionEvent.ACTION_UP:
                 newFingerRotation = Math.toDegrees(Math.atan2(x - xc, yc - y));
@@ -480,7 +471,7 @@ public class PielView extends View {
                 // This computes if you're holding the tap for too long
                 upPressTime = event.getEventTime();
                 if (upPressTime - downPressTime > 700L) {
-                    Log.d("Tap detect", "Disregarding the touch since the tap is too slow");
+                    // Disregarding the touch since the tap is too slow
                     return true;
                 }
 
@@ -502,11 +493,10 @@ public class PielView extends View {
                 }
 
                 flingDiff = computedRotation - viewRotation;
-                Log.d("Rotation", "View Rotation value " + viewRotation);
-                Log.d("Rotation", "New Computed  value " + computedRotation);
-                Log.d("Rotation", "Difference value " + flingDiff);
 
-                if (flingDiff <= -60 || (flingDiff < 0 && flingDiff >= -59 && upPressTime - downPressTime <= 300L)) {
+                if (flingDiff <= -60 ||
+                        //If you have a very fast flick / swipe, you an disregard the touch difference
+                        (flingDiff < 0 && flingDiff >= -59 && upPressTime - downPressTime <= 200L)) {
                     if (predeterminedNumber > -1) {
                         rotateTo(predeterminedNumber, SpinRotation.COUNTERCLOCKWISE, false);
                     } else {
@@ -514,7 +504,9 @@ public class PielView extends View {
                     }
                 }
 
-                if (flingDiff >= 60 || (flingDiff > 0 && flingDiff <= 59 && upPressTime - downPressTime <= 300L)) {
+                if (flingDiff >= 60 ||
+                        //If you have a very fast flick / swipe, you an disregard the touch difference
+                        (flingDiff > 0 && flingDiff <= 59 && upPressTime - downPressTime <= 200L)) {
                     if (predeterminedNumber > -1) {
                         rotateTo(predeterminedNumber, SpinRotation.CLOCKWISE, false);
                     } else {
@@ -537,38 +529,33 @@ public class PielView extends View {
         return rand.nextInt(mLuckyItemList.size() - 1) + 0;
     }
 
-
-    private boolean isRotationConsistent(double newRotValue) {
+    /**
+     * This detects if your finger movement is a result of an actual raw touch event of if it's from a view jitter.
+     * This uses 3 events of rotation temporary storage so that differentiation between swapping touch events can be determined.
+     *
+     * @param newRotValue
+     */
+    private boolean isRotationConsistent(final double newRotValue) {
         double evalValue = newRotValue;
-        //   if (evalValue < 0) evalValue = (evalValue + 360d) % 360d;
-        if (Double.compare(newRotationStore[2], newRotationStore[1]) != 0)
+
+        if (Double.compare(newRotationStore[2], newRotationStore[1]) != 0) {
             newRotationStore[2] = newRotationStore[1];
-        if (Double.compare(newRotationStore[1], newRotationStore[0]) != 0)
+        }
+        if (Double.compare(newRotationStore[1], newRotationStore[0]) != 0) {
             newRotationStore[1] = newRotationStore[0];
+        }
+
         newRotationStore[0] = evalValue;
 
-        double secondGap = Math.abs(newRotationStore[2] - newRotationStore[1]);
-        double firstGap = Math.abs(newRotationStore[1] - newRotationStore[0]);
+        if (Double.compare(newRotationStore[2], newRotationStore[0]) == 0
+                || Double.compare(newRotationStore[1], newRotationStore[0]) == 0
+                || Double.compare(newRotationStore[2], newRotationStore[1]) == 0
 
-
-        if (//Math.abs(newRotationStore[1] - newRotationStore[0]) >= 15d ||
-                Double.compare(newRotationStore[2], newRotationStore[0]) == 0
-                        || Double.compare(newRotationStore[1], newRotationStore[0]) == 0
-                        || Double.compare(newRotationStore[2], newRotationStore[1]) == 0
-                        || (newRotationStore[0] > newRotationStore[1] && newRotationStore[1] < newRotationStore[2])
-            //       || Math.abs(secondGap - firstGap) >= 10d
-
+                //Is the middle event the odd one out
+                || (newRotationStore[0] > newRotationStore[1] && newRotationStore[1] < newRotationStore[2])
+                || (newRotationStore[0] < newRotationStore[1] && newRotationStore[1] > newRotationStore[2])
         ) {
-            //      Log.e("Rotation", "Double is equal ");
             return false;
-        } else {
-//
-//            Log.d("Rotation", "Double store 0 value: " + newRotationStore[0]);
-//            Log.d("Rotation", "Double store 1 value: " + newRotationStore[1]);
-//            Log.d("Rotation", "Double store 2 value: " + newRotationStore[2]);
-//            Log.d("Rotation", "Compare value second gap: " + secondGap);
-//            Log.d("Rotation", "Compare value first gap: " + firstGap);
-//            Log.d("Rotation", "New store value: " + evalValue);
         }
         return true;
     }
