@@ -1,6 +1,8 @@
 package rubikstudio.library;
 
 import android.animation.Animator;
+import android.animation.TimeInterpolator;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,6 +13,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.AttributeSet;
@@ -19,7 +22,9 @@ import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
+import android.view.animation.BaseInterpolator;
 import android.view.animation.DecelerateInterpolator;
+import android.view.animation.LinearInterpolator;
 
 import java.util.List;
 import java.util.Random;
@@ -345,14 +350,16 @@ public class PielView extends View {
 
     public void rotateTo(final int index) {
         Random rand = new Random();
-        rotateTo(index, (rand.nextInt() * 3) % 2);
+        rotateTo(index, (rand.nextInt() * 3) % 2, true);
     }
 
     /**
      * @param index
      * @param rotation, spin orientation of the wheel if clockwise or counterclockwise
+     * @param startSlow, either animates a slow start or an immediate turn based on the trigger
      */
-    public void rotateTo(final int index, @SpinRotation final int rotation) {
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP_MR1)
+    public void rotateTo(final int index, @SpinRotation final int rotation, boolean startSlow) {
         if (isRunning) {
             return;
         }
@@ -363,10 +370,11 @@ public class PielView extends View {
         // But this inital animation will just reset the position of the circle to 0 degreees.
         if (getRotation() != 0.0f) {
             setRotation(getRotation() % 360f);
+            TimeInterpolator animationStart = startSlow ? new AccelerateInterpolator() : new LinearInterpolator();
             //The multiplier is to do a big rotation again if the position is already near 360.
             float multiplier = getRotation() > 200f ? 2 : 1;
             animate()
-                    .setInterpolator(new AccelerateInterpolator())
+                    .setInterpolator(animationStart)
                     .setDuration(500L)
                     .setListener(new Animator.AnimatorListener() {
                         @Override
@@ -378,7 +386,7 @@ public class PielView extends View {
                         public void onAnimationEnd(Animator animation) {
                             isRunning = false;
                             setRotation(0);
-                            rotateTo(index, rotation);
+                            rotateTo(index, rotation, false);
                         }
 
                         @Override
@@ -498,19 +506,19 @@ public class PielView extends View {
                 Log.d("Rotation", "New Computed  value " + computedRotation);
                 Log.d("Rotation", "Difference value " + flingDiff);
 
-                if (flingDiff <= -60) {
+                if (flingDiff <= -60 || (flingDiff < 0 && flingDiff >= -59 && upPressTime - downPressTime <= 300L)) {
                     if (predeterminedNumber > -1) {
-                        rotateTo(predeterminedNumber, SpinRotation.COUNTERCLOCKWISE);
+                        rotateTo(predeterminedNumber, SpinRotation.COUNTERCLOCKWISE, false);
                     } else {
-                        rotateTo(getFallBackRandomIndex(), SpinRotation.COUNTERCLOCKWISE);
+                        rotateTo(getFallBackRandomIndex(), SpinRotation.COUNTERCLOCKWISE, false);
                     }
                 }
 
-                if (flingDiff >= 60) {
+                if (flingDiff >= 60 || (flingDiff > 0 && flingDiff <= 59 && upPressTime - downPressTime <= 300L)) {
                     if (predeterminedNumber > -1) {
-                        rotateTo(predeterminedNumber, SpinRotation.CLOCKWISE);
+                        rotateTo(predeterminedNumber, SpinRotation.CLOCKWISE, false);
                     } else {
-                        rotateTo(getFallBackRandomIndex(), SpinRotation.CLOCKWISE);
+                        rotateTo(getFallBackRandomIndex(), SpinRotation.CLOCKWISE, false);
                     }
                 }
 
