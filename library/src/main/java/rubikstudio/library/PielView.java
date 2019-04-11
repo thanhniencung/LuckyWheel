@@ -434,9 +434,19 @@ public class PielView extends View {
                 .start();
     }
 
+    public boolean touchEnabled = true;
+
+    public boolean isTouchEnabled() {
+        return touchEnabled;
+    }
+
+    public void setTouchEnabled(boolean touchEnabled) {
+        this.touchEnabled = touchEnabled;
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (isRunning) {
+        if (isRunning || !touchEnabled) {
             return false;
         }
 
