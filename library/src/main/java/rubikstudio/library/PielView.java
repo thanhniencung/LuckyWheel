@@ -75,7 +75,7 @@ public class PielView extends View {
     }
 
     public PielView(Context context) {
-        super(context);
+        this(context,null);
     }
 
     public PielView(Context context, AttributeSet attrs) {
