@@ -102,6 +102,10 @@ public class PielView extends View {
         mRange = new RectF(mPadding, mPadding, mPadding + mRadius, mPadding + mRadius);
     }
 
+    public int getLuckyItemListSize() {
+        return mLuckyItemList.size();
+    }
+    
     public void setData(List<LuckyItem> luckyItemList) {
         this.mLuckyItemList = luckyItemList;
         invalidate();
@@ -434,9 +438,19 @@ public class PielView extends View {
                 .start();
     }
 
+    public boolean touchEnabled = true;
+
+    public boolean isTouchEnabled() {
+        return touchEnabled;
+    }
+
+    public void setTouchEnabled(boolean touchEnabled) {
+        this.touchEnabled = touchEnabled;
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (isRunning) {
+        if (isRunning || !touchEnabled) {
             return false;
         }
 
