@@ -102,6 +102,10 @@ public class PielView extends View {
         mRange = new RectF(mPadding, mPadding, mPadding + mRadius, mPadding + mRadius);
     }
 
+    public int getLuckyItemListSize() {
+        return mLuckyItemList.size();
+    }
+    
     public void setData(List<LuckyItem> luckyItemList) {
         this.mLuckyItemList = luckyItemList;
         invalidate();
