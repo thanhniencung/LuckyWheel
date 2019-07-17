@@ -52,8 +52,7 @@ public class LuckyWheelView extends RelativeLayout implements PielView.PieRotate
     }
 
     public LuckyWheelView(Context context) {
-        super(context);
-        init(context, null);
+        this(context, null);
     }
 
     public LuckyWheelView(Context context, AttributeSet attrs) {
