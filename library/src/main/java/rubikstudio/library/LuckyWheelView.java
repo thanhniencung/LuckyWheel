@@ -13,6 +13,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import java.util.List;
+import java.util.Random;
 
 import rubikstudio.library.model.LuckyItem;
 
