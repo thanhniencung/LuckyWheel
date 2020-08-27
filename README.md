@@ -1,6 +1,8 @@
 # Screenshot
 
-![Example Image](https://raw.github.com/thanhniencung/LuckyWheel/master/device-2016-11-05-214303.png)
+ <img src="https://raw.github.com/thanhniencung/LuckyWheel/master/device-2016-11-05-214303.png" height="650">
+
+Material WheelView
 
 # Usage
 
