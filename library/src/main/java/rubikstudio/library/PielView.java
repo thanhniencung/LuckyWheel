@@ -175,7 +175,7 @@ public class PielView extends View {
         init();
 
         float tmpAngle = mStartAngle;
-        float sweepAngle = 360f / mLuckyItemList.size();
+       float sweepAngle = Float.parseFloat("360.00") / Float.parseFloat(""+mLuckyItemList.size()+".00");
 
         for (int i = 0; i < mLuckyItemList.size(); i++) {
 
