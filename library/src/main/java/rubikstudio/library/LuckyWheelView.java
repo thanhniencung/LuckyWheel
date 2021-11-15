@@ -11,7 +11,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
-
+import android.widget.*;
 import java.util.List;
 
 import rubikstudio.library.model.LuckyItem;
@@ -66,26 +66,16 @@ public class LuckyWheelView extends RelativeLayout implements PielView.PieRotate
      * @param attrs
      */
     private void init(Context ctx, AttributeSet attrs) {
-        if (attrs != null) {
-            TypedArray typedArray = ctx.obtainStyledAttributes(attrs, R.styleable.LuckyWheelView);
-            mBackgroundColor = typedArray.getColor(R.styleable.LuckyWheelView_lkwBackgroundColor, 0xffcc0000);
-            mTopTextSize = typedArray.getDimensionPixelSize(R.styleable.LuckyWheelView_lkwTopTextSize, (int) LuckyWheelUtils.convertDpToPixel(10f, getContext()));
-            mSecondaryTextSize = typedArray.getDimensionPixelSize(R.styleable.LuckyWheelView_lkwSecondaryTextSize, (int) LuckyWheelUtils.convertDpToPixel(20f, getContext()));
-            mTextColor = typedArray.getColor(R.styleable.LuckyWheelView_lkwTopTextColor, 0);
-            mTopTextPadding = typedArray.getDimensionPixelSize(R.styleable.LuckyWheelView_lkwTopTextPadding, (int) LuckyWheelUtils.convertDpToPixel(10f, getContext())) + (int) LuckyWheelUtils.convertDpToPixel(10f, getContext());
-            mCursorImage = typedArray.getDrawable(R.styleable.LuckyWheelView_lkwCursor);
-            mCenterImage = typedArray.getDrawable(R.styleable.LuckyWheelView_lkwCenterImage);
-            mEdgeWidth = typedArray.getInt(R.styleable.LuckyWheelView_lkwEdgeWidth, 10);
-            mBorderColor = typedArray.getColor(R.styleable.LuckyWheelView_lkwEdgeColor, 0);
-            typedArray.recycle();
-        }
-
-        LayoutInflater inflater = LayoutInflater.from(getContext());
-        FrameLayout frameLayout = (FrameLayout) inflater.inflate(R.layout.lucky_wheel_layout, this, false);
-
-        pielView = frameLayout.findViewById(R.id.pieView);
-        ivCursorView = frameLayout.findViewById(R.id.cursorView);
-
+        FrameLayout frameLayout = new FrameLayout(ctx);
+        pielView = new PielView(ctx);
+        ivCursorView = new ImageView(ctx);
+        final float scale = ctx.getResources().getDisplayMetrics().density;
+        int dpWidthInPx  = (int) (24 * scale);
+        int dpHeightInPx = (int) (24 * scale);
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(dpWidthInPx, dpHeightInPx);
+        ivCursorView.setLayoutParams(layoutParams);
+        frameLayout.addView(pielView);
+        frameLayout.addView(ivCursorView);
         pielView.setPieRotateListener(this);
         pielView.setPieBackgroundColor(mBackgroundColor);
         pielView.setTopTextPadding(mTopTextPadding);
